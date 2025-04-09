@@ -1,29 +1,52 @@
-import {v2 as cloudinary} from "cloudinary";
+import { v2 as cloudinary } from "cloudinary";
 import fs from "fs";
 
 // Configuration
-    cloudinary.config({ 
-        cloud_name: process.env.CLOUDINARY_CLOUD_NAME, 
-        api_key: process.env.CLOUDINARY_API_KEY, 
-        api_secret: process.env.CLOUDINARY_API_SECRET, // Click 'View API Keys' above to copy your API secret
+cloudinary.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
+// ✅ Upload local file to Cloudinary
+const uploadOnCloudinary = async (localFilePath) => {
+  try {
+    if (!localFilePath) return null;
+
+    const uploadResult = await cloudinary.uploader.upload(localFilePath, {
+      resource_type: "auto",
     });
-
-    const uploadOnCloudnary = async(localFilePath)=> {
-            try {
-                  if(!localFilePath) return null
-                  // then uploload the file 
-                  const uploadResult = await cloudinary.uploader.upload(localFilePath,{
-                      resource_type:"auto" // menas jo bhi file aiye gi vo detect ho jaiye ga
-                  })
-                  console.log("File is upload on Succesfully",uploadResult.url);
-                  return uploadResult; 
-            }  catch (error){
-                 fs.unlinkSync(localFilePath) 
-                 return null;
-            }
+     console.log("cloudinary Response", uploadResult);
+    // console.log("✅ File uploaded successfully:", uploadResult.url);
+    fs.unlinkSync(localFilePath)
+    return uploadResult;
+  } catch (error) {
+    console.error("❌ Upload error:", error);
+    if (fs.existsSync(localFilePath)) {
+      fs.unlinkSync(localFilePath);
     }
+    return null;
+  }
+};
 
-    cloudinary.v2.uploader.upload('https://res.cloudinary.com/demo/image/upload/getting-started/shoes.jpg', {public_id: 'shoes'},
-      function (error,result) {console.log(result)});
+// ✅ Upload from remote URL — wrap in async function
+const uploadFromURL = async () => {
+  try {
+    const uploadResult = await cloudinary.uploader.upload(
+      "https://res.cloudinary.com/demo/image/upload/getting-started/shoes.jpg",
+      {
+        public_id: "shoes",
+        resource_type: "image",
+      }
+    );
+    console.log("✅ Remote image uploaded:", uploadResult.url);
+  } catch (error) {
+    console.error("❌ Error uploading remote image:", error);
+  }
+};
 
-      export {uploadOnCloudnary}
+await uploadFromURL(); // Call the remote upload function
+
+// Export the local file uploader
+export {uploadOnCloudinary}
+
