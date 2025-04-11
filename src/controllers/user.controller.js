@@ -124,14 +124,14 @@ const registerUser = asyncHandler(async (req, res) => {
 const loginUser = asyncHandler(async(req , res) => {
    const {username , email , password,} = req.body;
     
-   if(!email || !username){
+   if(!(email || username)){
       throw new ApiError(400, "username or email is required to login")
    }
    // find user or email is required in our database
   const user = await User.findOne({
       $or: [{username}, {email}]
    });
-
+  console.log("User email or username find in our database", user)
    if(!user){
      throw new ApiError(404 , "user does  not exist in our database")
    }
@@ -189,8 +189,8 @@ const logoutUser = asyncHandler(async(req , res)=> {
   }
    return res
    .status(200)
-   .clearCookies("accessToken",options) 
-   .clearCookies("refreshToken",options)
+   .clearCookie("accessToken",options) 
+   .clearCookie("refreshToken",options)
    .json(new ApiResponse(200, {}, " User logged out"))
 })
 
