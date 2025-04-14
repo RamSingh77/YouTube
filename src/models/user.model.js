@@ -51,12 +51,13 @@ const userSchema = new Schema(
 );
  userSchema.pre("save", async function (next) {
         if(!this.isModified("password")) return next();
-      this.password = await bcrypt.hash(this.password ,10)
+        const salt = await bcrypt.genSalt(10);
+      this.password = await bcrypt.hash(this.password ,salt)
       next();
  })
 
  userSchema.methods.isPasswordCorrect = async function(password){
-    return  await bcrypt.hash(password , this.password)  // userpassword comapre to databsehash password
+    return  await bcrypt.compare(password , this.password)  // userpassword comapre to databsehash password
  }
  userSchema.methods.generateAccessToken = function(){
     return jwt.sign
