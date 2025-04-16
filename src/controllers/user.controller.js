@@ -4,7 +4,7 @@ import { User } from "../models/user.model.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js";
 import { ApiResponse } from "../utils/ApiResponse.js";
 import jwt from "jsonwebtoken";
-// import { deleteImageCloudinary } from "../utils/deleteFromCloudinary.js";
+import { deleteImageCloudinary } from "../utils/deleteFromCloudinary.js";
 import mongoose from "mongoose";
 
 
@@ -295,7 +295,7 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
     },
     { new: true }
   ).select("-password");
-
+   console.log("Find user id for account update", user)
   return res
     .status(200)
     .json(new ApiResponse(200, user, "User acount update succseefully"));
@@ -307,12 +307,20 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
   if (!avatarLocalPath) {
     throw new ApiError(400, "Missing avatar files");
   }
+
+  // ✅ Step 1: Get existing user to retrieve current avatar URL
+  const existingUser = await User.findById(req.user?._id);
+  console.log("exsitingUseravatar",existingUser);
+  const oldAvatarUrl = existingUser?.avatar;
+  console.log("old avatar",oldAvatarUrl);
   // upload new avatar
   const avatar = await uploadOnCloudinary(avatarLocalPath);
 
   if (!avatar.url) {
     throw new ApiError(400, "Error while uploading the avatar file");
   }
+
+
   // updated new avatar url in db
   const updatedAvatar = await User.findByIdAndUpdate(
     req.user?._id,
@@ -324,6 +332,10 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
     },
     { new: true }
   ).select("-password");
+
+  if (oldAvatarUrl) {
+    await deleteImageCloudinary(oldAvatarUrl);
+  }
   return res
     .status(200)
     .json(
