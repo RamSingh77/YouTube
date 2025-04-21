@@ -15,8 +15,20 @@ import {
 } from "../controllers/user.controller.js";
 import { upload } from "../middlewares/multer.middlewares.js";
 import { verifyJWT } from "../middlewares/auth.middlewares.js";
-
+import { registerValidator } from "../utils/validateRegistration.js";
+import { validationResult } from "express-validator";
 const router = Router();
+
+const validateRequest = (req, res, next) => {
+  const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return res.status(400).json({
+      success: false,
+      errors: errors.array().map(err => err.msg),
+    });
+  }
+  next();
+};
 
 router.route("/register").post(
   upload.fields([
@@ -30,7 +42,9 @@ router.route("/register").post(
     },
   ]),
 
-  registerUser
+  registerUser,          // controller
+  registerValidator,     // express-validator middleware
+    validateRequest,     // custom error handler
 );
 
 router.route("/login").post(loginUser);
@@ -38,7 +52,6 @@ router.route("/login").post(loginUser);
 //secured  routes
 router.route("/logout").post(verifyJWT, logoutUser);
 router.route("/refresh-token").post(refreshAccessToken);
-router.route("/change-password").post(verifyJWT, changePassword);
 router.route("/current-user").get(verifyJWT, getCurrentUser);
 router.route("/update-account").patch(verifyJWT, updateAccountDetails);
 router
@@ -49,4 +62,5 @@ router
   .patch(verifyJWT, upload.single("coverImage"), updateUserCoverImage);
 router.route("/c/:username").get(verifyJWT, getUserChannelProfile);
 router.route("/history").get(verifyJWT, getWatchHistory);
+router.route("/change-password").post(verifyJWT,changePassword);
 export default router;

@@ -1,54 +1,133 @@
 import mongoose, { Schema } from "mongoose";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
+
+
+// const userSchema = new Schema(
+//   {
+//     username: {
+//       type: String,
+//       required: true,
+//       unique: true,
+//       lowercase: true,
+//       trim: true,
+//       index: true, // index base searching
+//     },
+//     email: {
+//       type: String,
+//       required: true,
+//       unique: true,
+//       lowercase: true,
+//       trim: true,
+//     },
+
+//     fullName: {
+//       type: String,
+//       required: true,
+//       trim: true,
+//       index: true,
+//     },
+
+//     avatar: {
+//       type: String, // cloudnary url
+//       required: true,
+//     },
+//     coverImage: {
+//       type: String, // cloudnary url
+//     },
+//     watchHistory: [
+//       {
+//         type: Schema.Types.ObjectId,
+//         ref: "Video",
+//       },
+//     ],
+//     password: {
+//       type: String,
+//       required: [true, "Password is required"],
+//     },
+//     refreshToken: {
+//       type: String,
+//     },
+//   },
+//   { timestamps: true } // for created at and updated at
+// );
+
+
+
 const userSchema = new Schema(
   {
     username: {
       type: String,
-      required: true,
+      required: [true, "Username is required"],
       unique: true,
       lowercase: true,
       trim: true,
-      index: true, // index base searching
+      index: true,
+      minlength: [3, "Username must be at least 3 characters long"],
+      maxlength: [20, "Username must be at most 20 characters long"],
     },
+
     email: {
       type: String,
-      required: true,
+      required: [true, "Email is required"],
       unique: true,
       lowercase: true,
       trim: true,
+      match: [
+        /^\S+@\S+\.\S+$/,
+        "Please enter a valid email address",
+      ],
     },
 
     fullName: {
       type: String,
-      required: true,
+      required: [true, "Full name is required"],
       trim: true,
       index: true,
+      minlength: [3, "Full name must be at least 3 characters long"],
     },
 
     avatar: {
-      type: String, // cloudnary url
-      required: true,
+      type: String,
+      required: [true, "Avatar URL is required"],
+      match: [
+        /^https?:\/\/.*\.(jpeg|jpg|gif|png|webp|svg)$/,
+        "Avatar must be a valid image URL",
+      ],
     },
+
     coverImage: {
-      type: String, // cloudnary url
+      type: String,
+      match: [
+        /^https?:\/\/.*\.(jpeg|jpg|gif|png|webp|svg)$/,
+        "Cover image must be a valid image URL",
+      ],
     },
+
     watchHistory: [
       {
         type: Schema.Types.ObjectId,
         ref: "Video",
       },
     ],
+
     password: {
       type: String,
       required: [true, "Password is required"],
+      minlength: [6, "Password must be at least 6 characters long"],
     },
+
     refreshToken: {
       type: String,
     },
   },
-  { timestamps: true } // for created at and updated at
+  {
+    timestamps: true, // Adds createdAt and updatedAt
+  }
 );
+
+
+
  userSchema.pre("save", async function (next) {
         if(!this.isModified("password")) return next();
         const salt = await bcrypt.genSalt(10);
@@ -58,12 +137,15 @@ const userSchema = new Schema(
 
  userSchema.methods.isPasswordCorrect = async function(password){
     return  await bcrypt.compare(password , this.password)  // userpassword comapre to databsehash password
- }
+ };
+
+
  userSchema.methods.generateAccessToken = function(){
     return jwt.sign
      (
          {
-              _id: this._id,
+      
+         _id: this._id,
               email:this.email,
               username: this.username,
               fullName: this.fullName,
@@ -76,6 +158,9 @@ const userSchema = new Schema(
          }
     )
  }
+
+
+
 
 
  userSchema.methods.generateRefreshToken = function(){
